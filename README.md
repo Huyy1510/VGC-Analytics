@@ -14,6 +14,7 @@ Một công cụ bằng Python tự động hóa 100% quy trình xử lý sau gi
 
 - `generate_top8.py`: Script tự động tạo bảng xếp hạng và PokePaste cho Top 8 người chơi.
 - `fetch_usage.py`: Script tự động thu thập và phân tích chỉ số sử dụng (Usage Statistics) của tất cả người chơi trong giải đấu (hỗ trợ cả giải đấu Public và Private).
+- `compare_usage.py`: Script tự động so sánh dịch chuyển meta và biến động cách xây dựng (build) giữa 2 tuần giải đấu/tệp JSON usage.
 - `pokemon_name_mapping.json`: Dữ liệu ánh xạ tên Pokemon tương thích API generator và chuẩn hóa tên.
 - `item_name_mapping.json`: Dữ liệu ánh xạ tên vật phẩm tương thích API generator và chuẩn hóa tên.
 - `README.md`: Hướng dẫn sử dụng này.
@@ -72,7 +73,39 @@ python3 fetch_usage.py "<URL hoặc ID giải đấu>" [tùy chọn]
 - **Dữ liệu JSON**: File `.json` chứa toàn bộ dữ liệu cấu trúc sạch để dễ dàng tích hợp hoặc xử lý tiếp.
 - **Tóm tắt trên Terminal**: Hiển thị Top 10 Pokemon được sử dụng nhiều nhất.
 
+---
+
+### 3. So sánh biến động metagame (compare_usage.py)
+
+Script này giúp so sánh dữ liệu chỉ số sử dụng giữa 2 giải đấu (hoặc tuần thi đấu trước và sau) thông qua hai tệp JSON được tạo ra bởi `fetch_usage.py`. Nó sẽ tính toán tự động chênh lệch phần trăm sử dụng, dịch chuyển thứ hạng, biến động vật phẩm, đặc tính, Tera type và chiêu thức sử dụng trên từng Pokémon.
+
+#### Cách chạy:
+```bash
+python3 compare_usage.py <đường_dẫn_json_cũ> <đường_dẫn_json_mới> [tùy_chọn]
+```
+
+#### Các tham số tùy chọn:
+- `-o`, `--output-dir`: Thư mục lưu báo cáo kết quả (mặc định: thư mục hiện tại `.`).
+- `-l`, `--limit`: Số lượng Pokémon hàng đầu phân tích chi tiết biến động build (mặc định: `10`, truyền `-1` để phân tích tất cả).
+
+#### Ví dụ:
+```bash
+python3 compare_usage.py "Alpensee_Tour_60_usage.json" "Alpensee_Tour_62_usage.json"
+```
+
+#### Kết quả đầu ra:
+- **Báo cáo dịch chuyển meta (Markdown)**: File `.md` (ví dụ: `Alpensee_Tour_60_vs_Alpensee_Tour_62_comparison.md`) hiển thị bảng biến động thứ hạng trực quan (`▲`, `▼`, `▬`, `New`, `Dropped`) và chi tiết sự tăng giảm sử dụng vật phẩm/chiêu thức cụ thể.
+- **Dữ liệu so sánh JSON**: File `.json` chứa thông tin so sánh hoàn chỉnh dạng cấu trúc.
+- **Tóm tắt trên Terminal**: In ra các Pokémon tăng trưởng (Winners) và suy giảm (Losers) mạnh nhất.
+
 ## Nhật ký cập nhật (Changelog)
+
+### v1.2.0 (18/06/2026)
+- **Tính năng so sánh metagame (`compare_usage.py`)**:
+  - Hỗ trợ so sánh tự động dịch chuyển thứ hạng (Rank shifts) và tỷ lệ sử dụng (Usage rate) giữa 2 tuần giải đấu/tệp JSON.
+  - Phân tích chi tiết sự thay đổi về Vật phẩm (Items), Đặc tính (Abilities), Chiêu thức (Moves), Hệ Tera, và Tính cách (Natures) cụ thể trên từng Pokémon theo dạng so sánh `Cũ -> Mới (Chênh lệch)`.
+  - Xuất báo cáo trực quan dưới dạng bảng Markdown (`.md`) và tệp JSON so sánh cấu trúc sạch.
+- **Cập nhật danh sách Mega hỗ trợ**: Bổ sung cấu hình ánh xạ cho Scolipede Mega, Scrafty Mega, Pyroar Mega, và Dragalge Mega. Mở rộng danh sách fallback an toàn cho các dạng Mega chưa được Generator hỗ trợ (Mega Raichu X/Y, Mega Staraptor, Mega Eelektross, Mega Malamar, Mega Barbaracle, Mega Falinks).
 
 ### v1.1.0 (18/06/2026)
 - **Hỗ trợ Regulation M-B**: Cập nhật ánh xạ thể thức thi đấu mới Regulation M-B vào `format_map`.
