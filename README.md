@@ -72,6 +72,18 @@ python3 fetch_usage.py "<URL hoặc ID giải đấu>" [tùy chọn]
 - **Dữ liệu JSON**: File `.json` chứa toàn bộ dữ liệu cấu trúc sạch để dễ dàng tích hợp hoặc xử lý tiếp.
 - **Tóm tắt trên Terminal**: Hiển thị Top 10 Pokemon được sử dụng nhiều nhất.
 
+## Nhật ký cập nhật (Changelog)
+
+### v1.1.0 (18/06/2026)
+- **Hỗ trợ Regulation M-B**: Cập nhật ánh xạ thể thức thi đấu mới Regulation M-B vào `format_map`.
+- **Tính năng phân tích Usage Statistics (`fetch_usage.py`)**:
+  - Hỗ trợ thu thập và thống kê số lần xuất hiện của từng Pokémon trong giải đấu.
+  - Phân tích chi tiết số lần sử dụng của các Vật phẩm (Items), Đặc tính (Abilities), Chiêu thức (Moves), Hệ Tera, và Tính cách (Natures) trên từng Pokémon.
+  - Xuất báo cáo trực quan dưới dạng Markdown (`.md`) và dữ liệu cấu trúc sạch (`.json`).
+  - Hỗ trợ API Key để lấy dữ liệu từ các giải đấu riêng tư (Private Tournaments).
+- **Tự động nhận diện Mega Pokémon**: Tự động quét vật phẩm để phát hiện Pokémon tiến hóa Mega, chọn sprite Mega thích hợp cho Generator API.
+- **Cơ chế Fallback chống lỗi**: Tự động chuyển Pokémon Mega về dạng thường nếu Generator API không hỗ trợ sprite Mega đó (ví dụ: Mega Staraptor, Mega Raichu) để tránh lỗi crash HTTP 500.
+
 ## Đóng góp ý kiến
 
 Nếu bạn gặp bất kỳ vấn đề nào liên quan đến việc ánh xạ tên Pokemon hoặc lỗi kết nối API, vui lòng gửi phản hồi hoặc tự cập nhật trực tiếp vào hai file `pokemon_name_mapping.json` và `item_name_mapping.json`.

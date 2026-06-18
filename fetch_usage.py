@@ -140,8 +140,10 @@ def map_pokemon_name(name):
         if "fan" in name_lower:
             return "Rotom-fan"
             
-    # Hỗ trợ Floette Eternal
+    # Hỗ trợ Floette Eternal và Floette Eternal Mega
     if "eternal" in name_lower and "floette" in name_lower:
+        if "mega" in name_lower:
+            return "floette-eternal-mega"
         return "Floette-eternal"
         
     name_normalized = name_normalized.replace("-female", "-f").replace("-male", "-m")
@@ -177,6 +179,8 @@ def map_pokemon_name(name):
         "calyrex-ice": "Calyrex-ice",
         "calyrex-shadow-rider": "Calyrex-shadow",
         "calyrex-shadow": "Calyrex-shadow",
+        "eternal-flower-floette-mega": "floette-eternal-mega",
+        "floette-eternal-mega": "floette-eternal-mega",
     }
     
     if name_normalized in manual_maps:
@@ -287,7 +291,32 @@ def main():
             if not raw_poke_name:
                 continue
                 
-            poke_name = map_pokemon_name(raw_poke_name)
+            raw_item_name = pm.get("item", "")
+            is_mega = False
+            item_clean = raw_item_name.strip().lower() if raw_item_name else ""
+            if item_clean and item_clean != "eviolite" and (item_clean.endswith("ite") or "ite x" in item_clean or "ite y" in item_clean or "ite-x" in item_clean or "ite-y" in item_clean):
+                is_mega = True
+                
+            p_name_for_mapping = raw_poke_name
+            if is_mega:
+                if "charizardite x" in item_clean:
+                    p_name_for_mapping = f"{raw_poke_name} Mega X"
+                elif "charizardite y" in item_clean:
+                    p_name_for_mapping = f"{raw_poke_name} Mega Y"
+                elif "mewtwoite x" in item_clean:
+                    p_name_for_mapping = f"{raw_poke_name} Mega X"
+                elif "mewtwoite y" in item_clean:
+                    p_name_for_mapping = f"{raw_poke_name} Mega Y"
+                else:
+                    p_name_for_mapping = f"{raw_poke_name} Mega"
+            
+            poke_name = map_pokemon_name(p_name_for_mapping)
+            
+            # Nếu tên sau khi map rơi vào danh sách không được hỗ trợ bởi generator API, quay về tên gốc (không Mega)
+            unsupported_megas = {"staraptor-mega", "raichu-mega"}
+            if poke_name and poke_name.lower().replace(" ", "-") in unsupported_megas:
+                poke_name = map_pokemon_name(raw_poke_name)
+                
             if not poke_name or poke_name in seen_in_team:
                 continue
                 
