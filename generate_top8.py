@@ -374,7 +374,10 @@ def main():
             mapped_p_name = map_pokemon_name(p_name_for_mapping)
             
             # Nếu tên sau khi map rơi vào danh sách không được hỗ trợ bởi generator API, quay về tên gốc (không Mega)
-            unsupported_megas = {"staraptor-mega", "raichu-mega"}
+            unsupported_megas = {
+                "staraptor-mega", "raichu-mega", "raichu-mega-x", "raichu-mega-y",
+                "eelektross-mega", "malamar-mega", "barbaracle-mega", "falinks-mega"
+            }
             if mapped_p_name and mapped_p_name.lower().replace(" ", "-") in unsupported_megas:
                 mapped_p_name = map_pokemon_name(raw_p_name)
                 
