@@ -548,7 +548,6 @@ def write_html_report(data, filename):
         <h1 class="header-title">{data['tournament_name']}</h1>
         <div class="header-meta">
             <span class="meta-badge">📅 Date: {data['date']}</span>
-            <span class="meta-badge">🏆 Format: {data['format']}</span>
             <span class="meta-badge">👥 Players: {data['total_players']}</span>
             <span class="meta-badge">📊 Teams Analyzed: {data['teams_analyzed']}</span>
         </div>
@@ -643,6 +642,16 @@ def write_html_report(data, filename):
                 return;
             }}
             
+            let formsHtml = "";
+            if (p.forms && p.forms.length > 1) {{
+                formsHtml = `
+                    <div class="card">
+                        <h3 class="card-title">Forms & Mega Variants</h3>
+                        ${{renderProgressList(p.forms)}}
+                    </div>
+                `;
+            }}
+            
             detailsEl.innerHTML = `
                 <div class="details-header">
                     <div>
@@ -656,6 +665,8 @@ def write_html_report(data, filename):
                 </div>
                 
                 <div class="grid-container">
+                    ${{formsHtml}}
+                    
                     <div class="card">
                         <h3 class="card-title">Popular Items</h3>
                         ${{renderProgressList(p.items)}}
@@ -786,28 +797,20 @@ def main():
             if item_clean and item_clean != "eviolite" and (item_clean.endswith("ite") or "ite x" in item_clean or "ite y" in item_clean or "ite-x" in item_clean or "ite-y" in item_clean):
                 is_mega = True
                 
-            p_name_for_mapping = raw_poke_name
+            form_name = "Base"
             if is_mega:
                 if "charizardite x" in item_clean:
-                    p_name_for_mapping = f"{raw_poke_name} Mega X"
+                    form_name = "Mega X"
                 elif "charizardite y" in item_clean:
-                    p_name_for_mapping = f"{raw_poke_name} Mega Y"
+                    form_name = "Mega Y"
                 elif "mewtwoite x" in item_clean:
-                    p_name_for_mapping = f"{raw_poke_name} Mega X"
+                    form_name = "Mega X"
                 elif "mewtwoite y" in item_clean:
-                    p_name_for_mapping = f"{raw_poke_name} Mega Y"
+                    form_name = "Mega Y"
                 else:
-                    p_name_for_mapping = f"{raw_poke_name} Mega"
+                    form_name = "Mega"
             
-            poke_name = map_pokemon_name(p_name_for_mapping)
-            
-            # Nếu tên sau khi map rơi vào danh sách không được hỗ trợ bởi generator API, quay về tên gốc (không Mega)
-            unsupported_megas = {
-                "staraptor-mega", "raichu-mega", "raichu-mega-x", "raichu-mega-y",
-                "eelektross-mega", "malamar-mega", "barbaracle-mega", "falinks-mega"
-            }
-            if poke_name and poke_name.lower().replace(" ", "-") in unsupported_megas:
-                poke_name = map_pokemon_name(raw_poke_name)
+            poke_name = map_pokemon_name(raw_poke_name)
                 
             if not poke_name or poke_name in seen_in_team:
                 continue
@@ -821,8 +824,11 @@ def main():
                     "abilities": Counter(),
                     "moves": Counter(),
                     "teras": Counter(),
-                    "natures": Counter()
+                    "natures": Counter(),
+                    "forms": Counter()
                 }
+                
+            poke_details[poke_name]["forms"][form_name] += 1
                 
             # Thống kê Vật phẩm (Item)
             raw_item = pm.get("item")
@@ -884,6 +890,7 @@ def main():
         moves_list = [{"name": mv, "count": cnt, "percentage": (cnt / count) * 100} for mv, cnt in sort_counter(details_entry["moves"])]
         teras_list = [{"name": tr, "count": cnt, "percentage": (cnt / count) * 100} for tr, cnt in sort_counter(details_entry["teras"])]
         natures_list = [{"name": nt, "count": cnt, "percentage": (cnt / count) * 100} for nt, cnt in sort_counter(details_entry["natures"])]
+        forms_list = [{"name": f, "count": cnt, "percentage": (cnt / count) * 100} for f, cnt in sort_counter(details_entry.get("forms", {}))]
         
         usage_json_data["pokemon_usage"].append({
             "rank": rank,
@@ -894,7 +901,8 @@ def main():
             "abilities": abilities_list,
             "moves": moves_list,
             "teras": teras_list,
-            "natures": natures_list
+            "natures": natures_list,
+            "forms": forms_list
         })
         
     # 6. Tạo file Markdown báo cáo
@@ -924,6 +932,12 @@ def main():
         poke_name = item["name"]
         md_content.append(f"### {idx+1}. {poke_name} (Sử dụng: {item['count']} lần - {item['percentage']:.2f}%)")
         
+        # Thống kê phân bổ dạng Pokémon/Mega nếu có nhiều dạng
+        non_base_forms = [f for f in item.get("forms", []) if f["name"] != "Base"]
+        if len(item.get("forms", [])) > 1 or non_base_forms:
+            forms_str = ", ".join([f"{f['name']}: {f['percentage']:.1f}%" for f in item["forms"]])
+            md_content.append(f"**Forms/Mega Variants:** {forms_str}\n")
+            
         # Tạo bảng so sánh chi tiết
         md_content.append("\n<details><summary>Xem chi tiết Build</summary>\n")
         

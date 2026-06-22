@@ -692,7 +692,6 @@ def write_html_comparison(data, filename):
         document.getElementById('old-title').innerText = data.old_tournament.name;
         document.getElementById('old-meta').innerHTML = `
             <span class="meta-badge">📅 ${data.old_tournament.date}</span>
-            <span class="meta-badge">🏆 ${data.old_tournament.format}</span>
             <span class="meta-badge">👥 ${data.old_tournament.total_players} players</span>
             <span class="meta-badge">📊 ${data.old_tournament.teams_analyzed} teams</span>
         `;
@@ -700,7 +699,6 @@ def write_html_comparison(data, filename):
         document.getElementById('new-title').innerText = data.new_tournament.name;
         document.getElementById('new-meta').innerHTML = `
             <span class="meta-badge">📅 ${data.new_tournament.date}</span>
-            <span class="meta-badge">🏆 ${data.new_tournament.format}</span>
             <span class="meta-badge">👥 ${data.new_tournament.total_players} players</span>
             <span class="meta-badge">📊 ${data.new_tournament.teams_analyzed} teams</span>
         `;
@@ -971,12 +969,21 @@ def write_html_comparison(data, filename):
                 triggerEl.classList.add('active');
                 
                 const gridEl = document.getElementById('grid-' + rowId);
+                let formsHtml = "";
+                if (p.forms && p.forms.length > 0) {
+                    const hasVariants = p.forms.some(f => f.name !== "Base" && (f.old_percentage > 0 || f.new_percentage > 0));
+                    if (hasVariants) {
+                        formsHtml = renderDetailSection("Forms & Mega Variants Shifts", p.forms);
+                    }
+                }
+                
                 const itemsHtml = renderDetailSection("Popular Items", p.items);
                 const abilitiesHtml = renderDetailSection("Popular Abilities", p.abilities);
                 const naturesHtml = renderDetailSection("Popular Natures", p.natures);
                 const movesHtml = renderDetailSectionWide("Popular Moves", p.moves);
                 
                 gridEl.innerHTML = `
+                    ${formsHtml}
                     ${itemsHtml}
                     ${abilitiesHtml}
                     ${naturesHtml}
@@ -1061,6 +1068,7 @@ def main():
         moves_diff = compare_metrics(o_poke.get("moves", []), n_poke.get("moves", []))
         teras_diff = compare_metrics(o_poke.get("teras", []), n_poke.get("teras", []))
         natures_diff = compare_metrics(o_poke.get("natures", []), n_poke.get("natures", []))
+        forms_diff = compare_metrics(o_poke.get("forms", []), n_poke.get("forms", []))
         
         compared_pokes.append({
             "name": name,
@@ -1076,7 +1084,8 @@ def main():
             "abilities": abilities_diff,
             "moves": moves_diff,
             "teras": teras_diff,
-            "natures": natures_diff
+            "natures": natures_diff,
+            "forms": forms_diff
         })
         
     # Sắp xếp danh sách chung: Ưu tiên các con nằm trong bảng mới theo hạng mới tăng dần.
