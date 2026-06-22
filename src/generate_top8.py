@@ -459,8 +459,8 @@ def main():
         if args.output:
             out_file = args.output
         else:
-            # Lưu vào thư mục results mặc định ở thư mục gốc dự án
-            results_dir = os.path.join(project_root, "results")
+            # Lưu vào thư mục results/top8/ mặc định ở thư mục gốc dự án
+            results_dir = os.path.join(project_root, "results", "top8")
             os.makedirs(results_dir, exist_ok=True)
             safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', tour_name.replace(" ", "_"))
             out_file = os.path.join(results_dir, f"{safe_name}_top8.png")

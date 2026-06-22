@@ -81,7 +81,7 @@ def main():
     # Xác định thư mục lưu kết quả mặc định
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results")
+    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results", "compare")
     
     # 1. Đọc dữ liệu JSON
     old_data = load_json(args.old_json)

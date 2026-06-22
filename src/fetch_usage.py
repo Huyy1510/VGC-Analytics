@@ -227,7 +227,7 @@ def main():
     
     args = parser.parse_args()
     
-    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results")
+    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results", "usage")
     
     # Lấy API Key từ đối số hoặc từ biến môi trường
     api_key = args.key or os.environ.get("LIMITLESS_API_KEY")
