@@ -1,4 +1,5 @@
-# Ignore generated tournament outputs
+# Ignore generated tournament outputs and results folder
+results/
 *.png
 *_usage.json
 *_usage.md

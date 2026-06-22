@@ -9,7 +9,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="So sánh chỉ số usage và dịch chuyển meta giữa 2 tuần giải đấu Pokemon VGC.")
     parser.add_argument("old_json", help="Đường dẫn đến file JSON của tuần cũ/giải cũ")
     parser.add_argument("new_json", help="Đường dẫn đến file JSON của tuần mới/giải mới")
-    parser.add_argument("-o", "--output-dir", default=".", help="Thư mục lưu báo cáo kết quả (mặc định: thư mục hiện tại)")
+    parser.add_argument("-o", "--output-dir", help="Thư mục lưu báo cáo kết quả (mặc định: thư mục results/ ở thư mục gốc dự án)")
     parser.add_argument("-l", "--limit", type=int, default=10, help="Số lượng Pokemon hàng đầu hiển thị chi tiết biến động build (mặc định: 10, truyền -1 để phân tích tất cả)")
     return parser.parse_args()
 
@@ -77,6 +77,11 @@ def format_rank_change(old_rank, new_rank):
 
 def main():
     args = parse_args()
+    
+    # Xác định thư mục lưu kết quả mặc định
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results")
     
     # 1. Đọc dữ liệu JSON
     old_data = load_json(args.old_json)
@@ -178,9 +183,9 @@ def main():
     safe_old_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', old_name.replace(" ", "_"))
     safe_new_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', new_name.replace(" ", "_"))
     
-    os.makedirs(args.output_dir, exist_ok=True)
-    md_filename = os.path.join(args.output_dir, f"{safe_old_name}_vs_{safe_new_name}_comparison.md")
-    json_filename = os.path.join(args.output_dir, f"{safe_old_name}_vs_{safe_new_name}_comparison.json")
+    os.makedirs(output_dir, exist_ok=True)
+    md_filename = os.path.join(output_dir, f"{safe_old_name}_vs_{safe_new_name}_comparison.md")
+    json_filename = os.path.join(output_dir, f"{safe_old_name}_vs_{safe_new_name}_comparison.json")
     
     # 5. Viết nội dung Markdown
     md_content = []

@@ -222,10 +222,12 @@ def main():
     parser = argparse.ArgumentParser(description="Thu thập và phân tích chỉ số sử dụng (Usage Statistics) của giải đấu Limitless (hỗ trợ cả giải đấu Public và Private).")
     parser.add_argument("tournament", help="URL giải đấu Limitless hoặc ID giải đấu (24 ký tự hex)")
     parser.add_argument("-k", "--key", help="API Key của Limitless (hoặc thiết lập biến môi trường LIMITLESS_API_KEY)")
-    parser.add_argument("-o", "--output-dir", default=".", help="Thư mục lưu kết quả báo cáo (mặc định: thư mục hiện tại)")
+    parser.add_argument("-o", "--output-dir", help="Thư mục lưu kết quả báo cáo (mặc định: thư mục results/ ở thư mục gốc dự án)")
     parser.add_argument("-l", "--limit", type=int, default=20, help="Số lượng Pokemon hàng đầu hiển thị chi tiết (mặc định: 20, truyền -1 để hiển thị tất cả)")
     
     args = parser.parse_args()
+    
+    output_dir = args.output_dir if args.output_dir else os.path.join(project_root, "results")
     
     # Lấy API Key từ đối số hoặc từ biến môi trường
     api_key = args.key or os.environ.get("LIMITLESS_API_KEY")
@@ -412,9 +414,9 @@ def main():
     # 6. Tạo file Markdown báo cáo
     safe_tour_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', tour_name.replace(" ", "_"))
     
-    os.makedirs(args.output_dir, exist_ok=True)
-    md_filename = os.path.join(args.output_dir, f"{safe_tour_name}_usage.md")
-    json_filename = os.path.join(args.output_dir, f"{safe_tour_name}_usage.json")
+    os.makedirs(output_dir, exist_ok=True)
+    md_filename = os.path.join(output_dir, f"{safe_tour_name}_usage.md")
+    json_filename = os.path.join(output_dir, f"{safe_tour_name}_usage.json")
     
     # Viết nội dung Markdown
     md_content = []
