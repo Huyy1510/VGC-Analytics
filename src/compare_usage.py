@@ -79,11 +79,11 @@ def write_html_comparison(data, filename):
     json_str = json.dumps(data, ensure_ascii=False)
     
     html_template = """<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Báo cáo So sánh Dịch chuyển Meta - Pokemon VGC</title>
+    <title>Pokémon VGC - Meta Shift Comparison Report</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -610,13 +610,13 @@ def write_html_comparison(data, filename):
 <body>
     <div class="header-grid">
         <div class="tour-card">
-            <span class="tour-label">Giải đấu cũ (Old)</span>
+            <span class="tour-label">Old Tournament</span>
             <h2 class="tour-title" id="old-title">-</h2>
             <div class="tour-meta" id="old-meta"></div>
         </div>
         <div class="vs-divider">VS</div>
         <div class="tour-card">
-            <span class="tour-label">Giải đấu mới (New)</span>
+            <span class="tour-label">New Tournament</span>
             <h2 class="tour-title" id="new-title">-</h2>
             <div class="tour-meta" id="new-meta"></div>
         </div>
@@ -624,45 +624,45 @@ def write_html_comparison(data, filename):
     
     <div class="summary-grid">
         <div class="stat-card">
-            <span class="stat-card-title">Thay đổi người chơi</span>
+            <span class="stat-card-title">Player Count Change</span>
             <div class="stat-card-val" id="players-val">-</div>
         </div>
         <div class="stat-card">
-            <span class="stat-card-title">Thay đổi đội hình</span>
+            <span class="stat-card-title">Teams Analyzed Change</span>
             <div class="stat-card-val" id="teams-val">-</div>
         </div>
         <div class="stat-card">
-            <span class="stat-card-title">Pokémon tăng trưởng tốt nhất</span>
+            <span class="stat-card-title">Top Meta Winner</span>
             <div class="stat-card-val" id="top-winner-val" style="font-size: 1.4rem; color: var(--success);">-</div>
         </div>
         <div class="stat-card">
-            <span class="stat-card-title">Pokémon suy giảm nhiều nhất</span>
+            <span class="stat-card-title">Top Meta Loser</span>
             <div class="stat-card-val" id="top-loser-val" style="font-size: 1.4rem; color: var(--danger);">-</div>
         </div>
     </div>
     
     <div class="highlights-section">
         <div class="highlight-card winners">
-            <h3 class="highlight-title">📈 Top tăng trưởng mạnh nhất (Winners)</h3>
+            <h3 class="highlight-title">📈 Top Meta Winners</h3>
             <div class="highlight-list" id="winners-list"></div>
         </div>
         
         <div class="highlight-card losers">
-            <h3 class="highlight-title">📉 Top suy giảm mạnh nhất (Losers)</h3>
+            <h3 class="highlight-title">📉 Top Meta Losers</h3>
             <div class="highlight-list" id="losers-list"></div>
         </div>
     </div>
     
     <div class="controls-bar">
         <div class="search-wrapper">
-            <input type="text" class="search-input" id="search-input" placeholder="Tìm kiếm Pokemon...">
+            <input type="text" class="search-input" id="search-input" placeholder="Search Pokémon...">
         </div>
         <div class="tabs-wrapper">
-            <button class="tab-btn active" onclick="switchTab('all', this)">Tất cả</button>
-            <button class="tab-btn" onclick="switchTab('winners', this)">Tăng trưởng</button>
-            <button class="tab-btn" onclick="switchTab('losers', this)">Suy giảm</button>
-            <button class="tab-btn" onclick="switchTab('new', this)">Mới (New)</button>
-            <button class="tab-btn" onclick="switchTab('dropped', this)">Bị loại (Dropped)</button>
+            <button class="tab-btn active" onclick="switchTab('all', this)">All</button>
+            <button class="tab-btn" onclick="switchTab('winners', this)">Winners</button>
+            <button class="tab-btn" onclick="switchTab('losers', this)">Losers</button>
+            <button class="tab-btn" onclick="switchTab('new', this)">New</button>
+            <button class="tab-btn" onclick="switchTab('dropped', this)">Dropped</button>
         </div>
     </div>
     
@@ -670,12 +670,12 @@ def write_html_comparison(data, filename):
         <table>
             <thead>
                 <tr>
-                    <th>Hạng</th>
-                    <th>Biến động</th>
+                    <th>Rank</th>
+                    <th>Shift</th>
                     <th>Pokémon</th>
-                    <th>Usage Cũ</th>
-                    <th>Usage Mới</th>
-                    <th>Chênh lệch</th>
+                    <th>Old Usage</th>
+                    <th>New Usage</th>
+                    <th>Delta</th>
                 </tr>
             </thead>
             <tbody id="shifts-tbody"></tbody>
@@ -752,7 +752,7 @@ def write_html_comparison(data, filename):
         // Render Highlights Lists
         const winnersListEl = document.getElementById('winners-list');
         if (winners.length === 0) {
-            winnersListEl.innerHTML = '<div class="empty-state">Không có sự tăng trưởng nào</div>';
+            winnersListEl.innerHTML = '<div class="empty-state">No significant rise</div>';
         } else {
             winnersListEl.innerHTML = winners.map(w => `
                 <div class="highlight-item">
@@ -767,7 +767,7 @@ def write_html_comparison(data, filename):
         
         const losersListEl = document.getElementById('losers-list');
         if (losers.length === 0) {
-            losersListEl.innerHTML = '<div class="empty-state">Không có sự suy giảm nào</div>';
+            losersListEl.innerHTML = '<div class="empty-state">No significant fall</div>';
         } else {
             losersListEl.innerHTML = losers.map(l => `
                 <div class="highlight-item">
@@ -806,7 +806,7 @@ def write_html_comparison(data, filename):
             }
             
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Không tìm thấy Pokemon nào phù hợp</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No matching Pokémon found</td></tr>';
                 return;
             }
             
@@ -860,7 +860,7 @@ def write_html_comparison(data, filename):
                 detailsTr.innerHTML = `
                     <td colspan="6">
                         <div class="details-grid" id="grid-${rowId}">
-                            <div class="empty-state">Đang tải dữ liệu chi tiết...</div>
+                            <div class="empty-state">Loading details...</div>
                         </div>
                     </td>
                 `;
@@ -883,7 +883,7 @@ def write_html_comparison(data, filename):
                 return `
                     <div class="detail-card">
                         <h4 class="detail-card-title">${title}</h4>
-                        <div class="empty-state">Không có sự thay đổi</div>
+                        <div class="empty-state">No shifts recorded</div>
                     </div>
                 `;
             }
@@ -930,7 +930,7 @@ def write_html_comparison(data, filename):
                 return `
                     <div class="detail-card">
                         <h4 class="detail-card-title">${title}</h4>
-                        <div class="empty-state">Không có sự thay đổi</div>
+                        <div class="empty-state">No shifts recorded</div>
                     </div>
                 `;
             }
@@ -971,11 +971,11 @@ def write_html_comparison(data, filename):
                 triggerEl.classList.add('active');
                 
                 const gridEl = document.getElementById('grid-' + rowId);
-                const itemsHtml = renderDetailSection("Vật phẩm phổ biến (Items)", p.items);
-                const abilitiesHtml = renderDetailSection("Đặc tính phổ biến (Abilities)", p.abilities);
-                const terasHtml = renderDetailSection("Hệ Tera phổ biến (Tera Types)", p.teras);
-                const naturesHtml = renderDetailSection("Tính cách (Natures)", p.natures);
-                const movesHtml = renderDetailSectionWide("Chiêu thức phổ biến (Moves)", p.moves);
+                const itemsHtml = renderDetailSection("Popular Items", p.items);
+                const abilitiesHtml = renderDetailSection("Popular Abilities", p.abilities);
+                const terasHtml = renderDetailSection("Popular Tera Types", p.teras);
+                const naturesHtml = renderDetailSection("Popular Natures", p.natures);
+                const movesHtml = renderDetailSectionWide("Popular Moves", p.moves);
                 
                 gridEl.innerHTML = `
                     ${itemsHtml}

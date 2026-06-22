@@ -222,11 +222,11 @@ def write_html_report(data, filename):
     json_str = json.dumps(data, ensure_ascii=False)
     
     html_template = f"""<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Báo cáo Usage Statistics - {data['tournament_name']}</title>
+    <title>Usage Statistics Report - {data['tournament_name']}</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
@@ -547,25 +547,25 @@ def write_html_report(data, filename):
     <div class="header">
         <h1 class="header-title">{data['tournament_name']}</h1>
         <div class="header-meta">
-            <span class="meta-badge">📅 Ngày: {data['date']}</span>
-            <span class="meta-badge">🏆 Thể thức: {data['format']}</span>
-            <span class="meta-badge">👥 Người chơi: {data['total_players']}</span>
-            <span class="meta-badge">📊 Đội hình phân tích: {data['teams_analyzed']}</span>
+            <span class="meta-badge">📅 Date: {data['date']}</span>
+            <span class="meta-badge">🏆 Format: {data['format']}</span>
+            <span class="meta-badge">👥 Players: {data['total_players']}</span>
+            <span class="meta-badge">📊 Teams Analyzed: {data['teams_analyzed']}</span>
         </div>
     </div>
     
     <div class="dashboard">
         <div class="sidebar">
             <div class="search-container">
-                <input type="text" class="search-input" id="search" placeholder="Tìm kiếm Pokemon...">
+                <input type="text" class="search-input" id="search" placeholder="Search Pokémon...">
             </div>
             <ul class="pokemon-list" id="list">
-                <!-- Danh sách Pokemon sẽ hiển thị ở đây -->
+                <!-- Pokémon list will appear here -->
             </ul>
         </div>
         
         <div class="details-panel" id="details">
-            <!-- Chi tiết chọn Pokemon sẽ hiển thị ở đây -->
+            <!-- Selected Pokémon details will appear here -->
         </div>
     </div>
     
@@ -586,12 +586,12 @@ def write_html_report(data, filename):
             }}
             
             if (filteredPokes.length === 0) {{
-                listEl.innerHTML = '<li class="empty-state">Không tìm thấy Pokemon nào</li>';
+                listEl.innerHTML = '<li class="empty-state">No Pokémon found</li>';
                 return;
             }}
             
             filteredPokes.forEach((p, idx) => {{
-                // Lấy index gốc trong mảng pokes
+                // Get original index in pokes array
                 const originalIdx = pokes.findIndex(op => op.name === p.name);
                 const li = document.createElement("li");
                 li.className = "pokemon-item" + (originalIdx === activeIndex ? " active" : "");
@@ -616,7 +616,7 @@ def write_html_report(data, filename):
                     <div class="card-item">
                         <div class="item-info">
                             <span class="item-name">${{item.name}}</span>
-                            <span class="item-pct">${{item.percentage.toFixed(1)}}% (${{item.count}} lần)</span>
+                            <span class="item-pct">${{item.percentage.toFixed(1)}}% (${{item.count}} times)</span>
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${{item.percentage}}%"></div>
@@ -639,7 +639,7 @@ def write_html_report(data, filename):
         function renderDetails() {{
             const p = pokes[activeIndex];
             if (!p) {{
-                detailsEl.innerHTML = '<div class="empty-state">Chọn một Pokemon ở danh sách để xem chi tiết build</div>';
+                detailsEl.innerHTML = '<div class="empty-state">Select a Pokémon from the list to view build details</div>';
                 return;
             }}
             
@@ -647,37 +647,37 @@ def write_html_report(data, filename):
                 <div class="details-header">
                     <div>
                         <h2 class="details-title">${{p.name}}</h2>
-                        <div class="details-subtitle">Hạng #${{p.rank}} | Xuất hiện: ${{p.count}} lần trong các đội hình</div>
+                        <div class="details-subtitle">Rank #${{p.rank}} | Usage: ${{p.count}} times across teams</div>
                     </div>
                     <div style="text-align: right">
                         <div style="font-size: 2.2rem; font-weight: 700; color: var(--primary);">${{p.percentage.toFixed(1)}}%</div>
-                        <div style="font-size: 0.9rem; color: var(--text-muted)">Tỷ lệ sử dụng</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted)">Usage Rate</div>
                     </div>
                 </div>
                 
                 <div class="grid-container">
                     <div class="card">
-                        <h3 class="card-title">Vật phẩm phổ biến (Items)</h3>
+                        <h3 class="card-title">Popular Items</h3>
                         ${{renderProgressList(p.items)}}
                     </div>
                     
                     <div class="card">
-                        <h3 class="card-title">Đặc tính phổ biến (Abilities)</h3>
+                        <h3 class="card-title">Popular Abilities</h3>
                         ${{renderProgressList(p.abilities)}}
                     </div>
                     
                     <div class="card">
-                        <h3 class="card-title">Hệ Tera phổ biến (Tera Types)</h3>
+                        <h3 class="card-title">Popular Tera Types</h3>
                         ${{renderBadges(p.teras)}}
                     </div>
                     
                     <div class="card">
-                        <h3 class="card-title">Tính cách (Natures)</h3>
+                        <h3 class="card-title">Popular Natures</h3>
                         ${{renderBadges(p.natures)}}
                     </div>
                     
                     <div class="card wide">
-                        <h3 class="card-title">Chiêu thức phổ biến (Moves)</h3>
+                        <h3 class="card-title">Popular Moves</h3>
                         <div class="card-list">
                             <div class="moves-grid">
                                 ${{p.moves.slice(0, 12).map(move => `
