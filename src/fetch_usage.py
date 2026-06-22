@@ -218,6 +218,497 @@ def sort_counter(counter):
     return sorted(counter.items(), key=lambda x: x[1], reverse=True)
 
 
+def write_html_report(data, filename):
+    json_str = json.dumps(data, ensure_ascii=False)
+    
+    html_template = f"""<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Usage Statistics - {data['tournament_name']}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --bg-active: #1e293b;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #1e293b;
+            --success: #10b981;
+            --danger: #ef4444;
+        }}
+        
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+        
+        body {{
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem;
+            min-height: 100vh;
+        }}
+        
+        .header {{
+            background: linear-gradient(135deg, var(--bg-card) 0%, #1e1b4b 100%);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .header-title {{
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(to right, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+        
+        .header-meta {{
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }}
+        
+        .meta-badge {{
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }}
+        
+        .dashboard {{
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 240px);
+            min-height: 600px;
+        }}
+        
+        @media (max-width: 960px) {{
+            body {{
+                padding: 1rem;
+            }}
+            .dashboard {{
+                grid-template-columns: 1fr;
+                height: auto;
+            }}
+        }}
+        
+        .sidebar {{
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }}
+        
+        .search-container {{
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }}
+        
+        .search-input {{
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }}
+        
+        .search-input:focus {{
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }}
+        
+        .pokemon-list {{
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+        }}
+        
+        /* Custom scrollbar */
+        .pokemon-list::-webkit-scrollbar, .details-panel::-webkit-scrollbar {{
+            width: 6px;
+        }}
+        .pokemon-list::-webkit-scrollbar-track, .details-panel::-webkit-scrollbar-track {{
+            background: transparent;
+        }}
+        .pokemon-list::-webkit-scrollbar-thumb, .details-panel::-webkit-scrollbar-thumb {{
+            background: #1e293b;
+            border-radius: 10px;
+        }}
+        .pokemon-list::-webkit-scrollbar-thumb:hover, .details-panel::-webkit-scrollbar-thumb:hover {{
+            background: #334155;
+        }}
+        
+        .pokemon-item {{
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.25s;
+        }}
+        
+        .pokemon-item:hover {{
+            background-color: rgba(99, 102, 241, 0.04);
+        }}
+        
+        .pokemon-item.active {{
+            background-color: var(--bg-active);
+            border-left: 4px solid var(--primary);
+            padding-left: calc(1.25rem - 4px);
+        }}
+        
+        .pokemon-rank {{
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 28px;
+        }}
+        
+        .pokemon-name {{
+            font-weight: 500;
+            flex: 1;
+        }}
+        
+        .pokemon-pct {{
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            background-color: var(--primary-glow);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }}
+        
+        .details-panel {{
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 2.5rem;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }}
+        
+        .details-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }}
+        
+        .details-title {{
+            font-size: 2rem;
+            font-weight: 700;
+        }}
+        
+        .details-subtitle {{
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-top: 0.25rem;
+        }}
+        
+        .grid-container {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }}
+        
+        .card {{
+            background-color: var(--bg-main);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }}
+        
+        .card-title {{
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            border-left: 3px solid var(--primary);
+            padding-left: 0.6rem;
+            color: #a5b4fc;
+        }}
+        
+        .card-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }}
+        
+        .card-item {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }}
+        
+        .item-info {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+        }}
+        
+        .item-name {{
+            font-weight: 500;
+        }}
+        
+        .item-pct {{
+            font-weight: 600;
+            color: var(--text-muted);
+        }}
+        
+        .progress-bar {{
+            height: 6px;
+            background-color: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+        }}
+        
+        .progress-fill {{
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 10px;
+            transition: width 0.5s ease-out;
+        }}
+        
+        .badge-container {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }}
+        
+        .badge {{
+            background-color: #1e293b;
+            color: var(--text-main);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }}
+        
+        .badge-pct {{
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+        }}
+        
+        .empty-state {{
+            text-align: center;
+            color: var(--text-muted);
+            padding: 3rem;
+            font-size: 1.1rem;
+        }}
+        
+        .card.wide {{
+            grid-column: 1 / -1;
+        }}
+        
+        .moves-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="header-title">{data['tournament_name']}</h1>
+        <div class="header-meta">
+            <span class="meta-badge">📅 Ngày: {data['date']}</span>
+            <span class="meta-badge">🏆 Thể thức: {data['format']}</span>
+            <span class="meta-badge">👥 Người chơi: {data['total_players']}</span>
+            <span class="meta-badge">📊 Đội hình phân tích: {data['teams_analyzed']}</span>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="search-container">
+                <input type="text" class="search-input" id="search" placeholder="Tìm kiếm Pokemon...">
+            </div>
+            <ul class="pokemon-list" id="list">
+                <!-- Danh sách Pokemon sẽ hiển thị ở đây -->
+            </ul>
+        </div>
+        
+        <div class="details-panel" id="details">
+            <!-- Chi tiết chọn Pokemon sẽ hiển thị ở đây -->
+        </div>
+    </div>
+    
+    <script>
+        const data = {json_str};
+        const pokes = data.pokemon_usage;
+        let activeIndex = 0;
+        
+        const listEl = document.getElementById("list");
+        const detailsEl = document.getElementById("details");
+        const searchInput = document.getElementById("search");
+        
+        function renderList(filter = "") {{
+            listEl.innerHTML = "";
+            let filteredPokes = pokes;
+            if (filter) {{
+                filteredPokes = pokes.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+            }}
+            
+            if (filteredPokes.length === 0) {{
+                listEl.innerHTML = '<li class="empty-state">Không tìm thấy Pokemon nào</li>';
+                return;
+            }}
+            
+            filteredPokes.forEach((p, idx) => {{
+                // Lấy index gốc trong mảng pokes
+                const originalIdx = pokes.findIndex(op => op.name === p.name);
+                const li = document.createElement("li");
+                li.className = "pokemon-item" + (originalIdx === activeIndex ? " active" : "");
+                li.innerHTML = `
+                    <span class="pokemon-rank">#${{p.rank}}</span>
+                    <span class="pokemon-name">${{p.name}}</span>
+                    <span class="pokemon-pct">${{p.percentage.toFixed(1)}}%</span>
+                `;
+                li.onclick = () => {{
+                    activeIndex = originalIdx;
+                    renderList(filter);
+                    renderDetails();
+                }};
+                listEl.appendChild(li);
+            }});
+        }}
+        
+        function renderProgressList(items) {{
+            if (!items || items.length === 0) return '<div class="empty-state">N/A</div>';
+            return '<div class="card-list">' + 
+                items.slice(0, 5).map(item => `
+                    <div class="card-item">
+                        <div class="item-info">
+                            <span class="item-name">${{item.name}}</span>
+                            <span class="item-pct">${{item.percentage.toFixed(1)}}% (${{item.count}} lần)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${{item.percentage}}%"></div>
+                        </div>
+                    </div>
+                `).join('') + '</div>';
+        }}
+        
+        function renderBadges(items) {{
+            if (!items || items.length === 0) return '<div class="empty-state">N/A</div>';
+            return '<div class="badge-container">' + 
+                items.slice(0, 6).map(item => `
+                    <div class="badge">
+                        <span>${{item.name}}</span>
+                        <span class="badge-pct">${{item.percentage.toFixed(1)}}%</span>
+                    </div>
+                `).join('') + '</div>';
+        }}
+        
+        function renderDetails() {{
+            const p = pokes[activeIndex];
+            if (!p) {{
+                detailsEl.innerHTML = '<div class="empty-state">Chọn một Pokemon ở danh sách để xem chi tiết build</div>';
+                return;
+            }}
+            
+            detailsEl.innerHTML = `
+                <div class="details-header">
+                    <div>
+                        <h2 class="details-title">${{p.name}}</h2>
+                        <div class="details-subtitle">Hạng #${{p.rank}} | Xuất hiện: ${{p.count}} lần trong các đội hình</div>
+                    </div>
+                    <div style="text-align: right">
+                        <div style="font-size: 2.2rem; font-weight: 700; color: var(--primary);">${{p.percentage.toFixed(1)}}%</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted)">Tỷ lệ sử dụng</div>
+                    </div>
+                </div>
+                
+                <div class="grid-container">
+                    <div class="card">
+                        <h3 class="card-title">Vật phẩm phổ biến (Items)</h3>
+                        ${{renderProgressList(p.items)}}
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="card-title">Đặc tính phổ biến (Abilities)</h3>
+                        ${{renderProgressList(p.abilities)}}
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="card-title">Hệ Tera phổ biến (Tera Types)</h3>
+                        ${{renderBadges(p.teras)}}
+                    </div>
+                    
+                    <div class="card">
+                        <h3 class="card-title">Tính cách (Natures)</h3>
+                        ${{renderBadges(p.natures)}}
+                    </div>
+                    
+                    <div class="card wide">
+                        <h3 class="card-title">Chiêu thức phổ biến (Moves)</h3>
+                        <div class="card-list">
+                            <div class="moves-grid">
+                                ${{p.moves.slice(0, 12).map(move => `
+                                    <div class="badge">
+                                        <span>${{move.name}}</span>
+                                        <span class="badge-pct">${{move.percentage.toFixed(1)}}%</span>
+                                    </div>
+                                `).join('')}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }}
+        
+        searchInput.oninput = (e) => {{
+            const val = e.target.value;
+            renderList(val);
+        }};
+        
+        // Khởi động render ban đầu
+        renderList();
+        renderDetails();
+    </script>
+</body>
+</html>
+"""
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(html_template)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Thu thập và phân tích chỉ số sử dụng (Usage Statistics) của giải đấu Limitless (hỗ trợ cả giải đấu Public và Private).")
     parser.add_argument("tournament", help="URL giải đấu Limitless hoặc ID giải đấu (24 ký tự hex)")
@@ -471,10 +962,15 @@ def main():
     with open(json_filename, "w", encoding="utf-8") as f:
         json.dump(usage_json_data, f, ensure_ascii=False, indent=2)
         
+    # Ghi ra file HTML
+    html_filename = os.path.join(output_dir, f"{safe_tour_name}_usage.html")
+    write_html_report(usage_json_data, html_filename)
+        
     print(f"\n==================================================")
     print(f" THÀNH CÔNG: Đã tạo và lưu các báo cáo Usage tại:")
     print(f" -> Markdown: {os.path.abspath(md_filename)}")
     print(f" -> JSON: {os.path.abspath(json_filename)}")
+    print(f" -> HTML: {os.path.abspath(html_filename)}")
     print(f"==================================================")
     
     # Hiển thị Top 10 Pokemon Usage ra console

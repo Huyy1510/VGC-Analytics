@@ -75,6 +75,947 @@ def format_rank_change(old_rank, new_rank):
     return "▬"
 
 
+def write_html_comparison(data, filename):
+    json_str = json.dumps(data, ensure_ascii=False)
+    
+    html_template = """<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo So sánh Dịch chuyển Meta - Pokemon VGC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #151d30;
+            --bg-active: #1e293b;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #1e293b;
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.15);
+            --warning: #f59e0b;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 2rem;
+            background: linear-gradient(135deg, var(--bg-card) 0%, #1e1b4b 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+        
+        .tour-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        
+        .tour-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        
+        .tour-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .tour-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.3rem;
+        }
+        
+        .meta-badge {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.6rem;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .vs-divider {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-style: italic;
+            background: linear-gradient(to right, #6366f1, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 0.5rem 1rem;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+            border: 1px dashed var(--border);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .stat-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stat-card-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        
+        .stat-delta {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+        
+        .stat-delta.up {
+            background-color: var(--success-glow);
+            color: var(--success);
+        }
+        
+        .stat-delta.down {
+            background-color: var(--danger-glow);
+            color: var(--danger);
+        }
+        
+        .stat-delta.neutral {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+        
+        .highlights-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .highlight-card {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .highlight-card.winners {
+            border-top: 4px solid var(--success);
+        }
+        
+        .highlight-card.losers {
+            border-top: 4px solid var(--danger);
+        }
+        
+        .highlight-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .highlight-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        
+        .highlight-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.9rem;
+            background-color: var(--bg-main);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .highlight-name {
+            font-weight: 600;
+        }
+        
+        .highlight-val {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .pct-badge {
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        
+        .pct-badge.up {
+            background-color: var(--success-glow);
+            color: var(--success);
+        }
+        
+        .pct-badge.down {
+            background-color: var(--danger-glow);
+            color: var(--danger);
+        }
+        
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-wrapper {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1.1rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+        
+        .tabs-wrapper {
+            display: flex;
+            gap: 0.4rem;
+            background-color: var(--bg-card);
+            padding: 0.3rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+        
+        .tab-btn.active {
+            background-color: var(--bg-active);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .table-container {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            margin-bottom: 2rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        
+        th {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+        
+        .poke-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .poke-row:hover {
+            background-color: rgba(99, 102, 241, 0.04);
+        }
+        
+        .poke-row.active {
+            background-color: rgba(99, 102, 241, 0.08);
+        }
+        
+        .rank-cell {
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 80px;
+        }
+        
+        .rank-change {
+            font-weight: 600;
+            width: 120px;
+        }
+        .rank-change.up {
+            color: var(--success);
+        }
+        .rank-change.down {
+            color: var(--danger);
+        }
+        .rank-change.new {
+            color: var(--primary);
+            font-style: italic;
+        }
+        .rank-change.dropped {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
+        .name-cell {
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .pct-cell {
+            font-weight: 600;
+            width: 130px;
+        }
+        
+        .diff-cell {
+            font-weight: 700;
+            width: 130px;
+        }
+        .diff-cell.up {
+            color: var(--success);
+        }
+        .diff-cell.down {
+            color: var(--danger);
+        }
+        
+        .details-row {
+            background-color: rgba(11, 15, 25, 0.5);
+        }
+        
+        .details-row td {
+            padding: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem 2rem;
+            background-color: rgba(11, 15, 25, 0.4);
+        }
+        
+        .detail-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .detail-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--primary);
+            padding-left: 0.5rem;
+            color: #a5b4fc;
+        }
+        
+        .metric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .metric-row {
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .metric-name {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        
+        .metric-values {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        .metric-diff {
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.05rem 0.25rem;
+            border-radius: 4px;
+        }
+        .metric-diff.up {
+            color: var(--success);
+            background-color: var(--success-glow);
+        }
+        .metric-diff.down {
+            color: var(--danger);
+            background-color: var(--danger-glow);
+        }
+        .metric-diff.neutral {
+            color: var(--text-muted);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .metric-bar-container {
+            height: 4px;
+            background-color: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .metric-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 10px;
+        }
+        
+        .moves-grid-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .header-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 1rem;
+            }
+            .vs-divider {
+                margin: 0.5rem auto;
+            }
+            .highlights-section {
+                grid-template-columns: 1fr;
+            }
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            th, td {
+                padding: 0.75rem 0.5rem;
+            }
+            .rank-change, .pct-cell, .diff-cell {
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-grid">
+        <div class="tour-card">
+            <span class="tour-label">Giải đấu cũ (Old)</span>
+            <h2 class="tour-title" id="old-title">-</h2>
+            <div class="tour-meta" id="old-meta"></div>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="tour-card">
+            <span class="tour-label">Giải đấu mới (New)</span>
+            <h2 class="tour-title" id="new-title">-</h2>
+            <div class="tour-meta" id="new-meta"></div>
+        </div>
+    </div>
+    
+    <div class="summary-grid">
+        <div class="stat-card">
+            <span class="stat-card-title">Thay đổi người chơi</span>
+            <div class="stat-card-val" id="players-val">-</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Thay đổi đội hình</span>
+            <div class="stat-card-val" id="teams-val">-</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Pokémon tăng trưởng tốt nhất</span>
+            <div class="stat-card-val" id="top-winner-val" style="font-size: 1.4rem; color: var(--success);">-</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-card-title">Pokémon suy giảm nhiều nhất</span>
+            <div class="stat-card-val" id="top-loser-val" style="font-size: 1.4rem; color: var(--danger);">-</div>
+        </div>
+    </div>
+    
+    <div class="highlights-section">
+        <div class="highlight-card winners">
+            <h3 class="highlight-title">📈 Top tăng trưởng mạnh nhất (Winners)</h3>
+            <div class="highlight-list" id="winners-list"></div>
+        </div>
+        
+        <div class="highlight-card losers">
+            <h3 class="highlight-title">📉 Top suy giảm mạnh nhất (Losers)</h3>
+            <div class="highlight-list" id="losers-list"></div>
+        </div>
+    </div>
+    
+    <div class="controls-bar">
+        <div class="search-wrapper">
+            <input type="text" class="search-input" id="search-input" placeholder="Tìm kiếm Pokemon...">
+        </div>
+        <div class="tabs-wrapper">
+            <button class="tab-btn active" onclick="switchTab('all', this)">Tất cả</button>
+            <button class="tab-btn" onclick="switchTab('winners', this)">Tăng trưởng</button>
+            <button class="tab-btn" onclick="switchTab('losers', this)">Suy giảm</button>
+            <button class="tab-btn" onclick="switchTab('new', this)">Mới (New)</button>
+            <button class="tab-btn" onclick="switchTab('dropped', this)">Bị loại (Dropped)</button>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Hạng</th>
+                    <th>Biến động</th>
+                    <th>Pokémon</th>
+                    <th>Usage Cũ</th>
+                    <th>Usage Mới</th>
+                    <th>Chênh lệch</th>
+                </tr>
+            </thead>
+            <tbody id="shifts-tbody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const data = {{JSON_DATA}};
+        const pokes = data.pokemon_shifts;
+        let activeTab = 'all';
+        let searchQuery = '';
+        
+        // Render Header
+        document.getElementById('old-title').innerText = data.old_tournament.name;
+        document.getElementById('old-meta').innerHTML = `
+            <span class="meta-badge">📅 ${data.old_tournament.date}</span>
+            <span class="meta-badge">🏆 ${data.old_tournament.format}</span>
+            <span class="meta-badge">👥 ${data.old_tournament.total_players} players</span>
+            <span class="meta-badge">📊 ${data.old_tournament.teams_analyzed} teams</span>
+        `;
+        
+        document.getElementById('new-title').innerText = data.new_tournament.name;
+        document.getElementById('new-meta').innerHTML = `
+            <span class="meta-badge">📅 ${data.new_tournament.date}</span>
+            <span class="meta-badge">🏆 ${data.new_tournament.format}</span>
+            <span class="meta-badge">👥 ${data.new_tournament.total_players} players</span>
+            <span class="meta-badge">📊 ${data.new_tournament.teams_analyzed} teams</span>
+        `;
+        
+        // Players difference
+        const pDiff = data.new_tournament.total_players - data.old_tournament.total_players;
+        const pDiffStr = pDiff > 0 ? `+${pDiff}` : pDiff;
+        const pDiffClass = pDiff > 0 ? 'up' : (pDiff < 0 ? 'down' : 'neutral');
+        document.getElementById('players-val').innerHTML = `
+            ${data.new_tournament.total_players}
+            <span class="stat-delta ${pDiffClass}">${pDiffStr}</span>
+        `;
+        
+        // Teams difference
+        const tDiff = data.new_tournament.teams_analyzed - data.old_tournament.teams_analyzed;
+        const tDiffStr = tDiff > 0 ? `+${tDiff}` : tDiff;
+        const tDiffClass = tDiff > 0 ? 'up' : (tDiff < 0 ? 'down' : 'neutral');
+        document.getElementById('teams-val').innerHTML = `
+            ${data.new_tournament.teams_analyzed}
+            <span class="stat-delta ${tDiffClass}">${tDiffStr}</span>
+        `;
+        
+        // Calculate Winners & Losers
+        const validDiffs = pokes.filter(p => p.old_percentage > 0 || p.new_percentage > 0);
+        
+        const winners = [...validDiffs]
+            .filter(p => p.percentage_diff > 0)
+            .sort((a, b) => b.percentage_diff - a.percentage_diff)
+            .slice(0, 5);
+            
+        const losers = [...validDiffs]
+            .filter(p => p.percentage_diff < 0)
+            .sort((a, b) => a.percentage_diff - b.percentage_diff)
+            .slice(0, 5);
+            
+        // Render Stat Cards Tops
+        if (winners.length > 0) {
+            document.getElementById('top-winner-val').innerText = `${winners[0].name} (+${winners[0].percentage_diff.toFixed(1)}%)`;
+        } else {
+            document.getElementById('top-winner-val').innerText = 'N/A';
+        }
+        
+        if (losers.length > 0) {
+            document.getElementById('top-loser-val').innerText = `${losers[0].name} (${losers[0].percentage_diff.toFixed(1)}%)`;
+        } else {
+            document.getElementById('top-loser-val').innerText = 'N/A';
+        }
+        
+        // Render Highlights Lists
+        const winnersListEl = document.getElementById('winners-list');
+        if (winners.length === 0) {
+            winnersListEl.innerHTML = '<div class="empty-state">Không có sự tăng trưởng nào</div>';
+        } else {
+            winnersListEl.innerHTML = winners.map(w => `
+                <div class="highlight-item">
+                    <span class="highlight-name">${w.name}</span>
+                    <div class="highlight-val">
+                        <span>${w.old_percentage.toFixed(1)}% → ${w.new_percentage.toFixed(1)}%</span>
+                        <span class="pct-badge up">+${w.percentage_diff.toFixed(1)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        const losersListEl = document.getElementById('losers-list');
+        if (losers.length === 0) {
+            losersListEl.innerHTML = '<div class="empty-state">Không có sự suy giảm nào</div>';
+        } else {
+            losersListEl.innerHTML = losers.map(l => `
+                <div class="highlight-item">
+                    <span class="highlight-name">${l.name}</span>
+                    <div class="highlight-val">
+                        <span>${l.old_percentage.toFixed(1)}% → ${l.new_percentage.toFixed(1)}%</span>
+                        <span class="pct-badge down">${l.percentage_diff.toFixed(1)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Render Table
+        function renderTable() {
+            const tbody = document.getElementById('shifts-tbody');
+            tbody.innerHTML = '';
+            
+            // Filter
+            let filtered = pokes;
+            
+            // Filter by search query
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+            }
+            
+            // Filter by tab
+            if (activeTab === 'winners') {
+                filtered = filtered.filter(p => p.percentage_diff > 0);
+            } else if (activeTab === 'losers') {
+                filtered = filtered.filter(p => p.percentage_diff < 0);
+            } else if (activeTab === 'new') {
+                filtered = filtered.filter(p => p.old_rank === null && p.new_rank !== null);
+            } else if (activeTab === 'dropped') {
+                filtered = filtered.filter(p => p.old_rank !== null && p.new_rank === null);
+            }
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Không tìm thấy Pokemon nào phù hợp</td></tr>';
+                return;
+            }
+            
+            filtered.forEach(p => {
+                const rowId = 'details-' + p.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                
+                // Rank change text & class
+                let rcClass = 'neutral';
+                let rcText = p.rank_change_str;
+                
+                if (p.rank_change_str.includes('▲')) {
+                    rcClass = 'up';
+                } else if (p.rank_change_str.includes('▼')) {
+                    rcClass = 'down';
+                } else if (p.rank_change_str.includes('New')) {
+                    rcClass = 'new';
+                    rcText = '🆕 New';
+                } else if (p.rank_change_str.includes('Dropped')) {
+                    rcClass = 'dropped';
+                    rcText = '❌ Dropped';
+                }
+                
+                const oldPctText = p.old_percentage > 0 ? `${p.old_percentage.toFixed(1)}%` : '—';
+                const newPctText = p.new_percentage > 0 ? `${p.new_percentage.toFixed(1)}%` : '—';
+                
+                const diffVal = p.percentage_diff;
+                const diffClass = diffVal > 0 ? 'up' : (diffVal < 0 ? 'down' : 'neutral');
+                const diffText = diffVal > 0 ? `+${diffVal.toFixed(2)}%` : (diffVal < 0 ? `${diffVal.toFixed(2)}%` : '0.00%');
+                
+                const newRankText = p.new_rank !== null ? `#${p.new_rank}` : '—';
+                
+                const tr = document.createElement('tr');
+                tr.id = 'trigger-' + rowId;
+                tr.className = 'poke-row';
+                tr.onclick = () => toggleRow(rowId, p);
+                tr.innerHTML = `
+                    <td class="rank-cell">${newRankText}</td>
+                    <td class="rank-change ${rcClass}">${rcText}</td>
+                    <td class="name-cell">${p.name}</td>
+                    <td class="pct-cell">${oldPctText}</td>
+                    <td class="pct-cell">${newPctText}</td>
+                    <td class="diff-cell ${diffClass}">${diffText}</td>
+                `;
+                tbody.appendChild(tr);
+                
+                // Create details row
+                const detailsTr = document.createElement('tr');
+                detailsTr.id = rowId;
+                detailsTr.className = 'details-row';
+                detailsTr.style.display = 'none';
+                detailsTr.innerHTML = `
+                    <td colspan="6">
+                        <div class="details-grid" id="grid-${rowId}">
+                            <div class="empty-state">Đang tải dữ liệu chi tiết...</div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(detailsTr);
+            });
+        }
+        
+        function renderDetailSection(title, list) {
+            if (!list || list.length === 0) {
+                return `
+                    <div class="detail-card">
+                        <h4 class="detail-card-title">${title}</h4>
+                        <div class="empty-state">N/A</div>
+                    </div>
+                `;
+            }
+            
+            const active = list.filter(item => item.old_percentage > 0 || item.new_percentage > 0);
+            if (active.length === 0) {
+                return `
+                    <div class="detail-card">
+                        <h4 class="detail-card-title">${title}</h4>
+                        <div class="empty-state">Không có sự thay đổi</div>
+                    </div>
+                `;
+            }
+            
+            const rowsHtml = active.slice(0, 8).map(item => {
+                const diff = item.diff;
+                const diffClass = diff > 0 ? 'up' : (diff < 0 ? 'down' : 'neutral');
+                const diffStr = diff > 0 ? `+${diff.toFixed(1)}%` : (diff < 0 ? `${diff.toFixed(1)}%` : '0.0%');
+                const diffText = diff !== 0 ? `<span class="metric-diff ${diffClass}">${diffStr}</span>` : '<span class="metric-diff neutral">▬</span>';
+                
+                return `
+                    <div class="metric-row">
+                        <div class="metric-info">
+                            <span class="metric-name">${item.name}</span>
+                            <span class="metric-values">${item.old_percentage.toFixed(1)}% → ${item.new_percentage.toFixed(1)}% ${diffText}</span>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar-fill" style="width: ${item.new_percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            return `
+                <div class="detail-card">
+                    <h4 class="detail-card-title">${title}</h4>
+                    <div class="metric-list">${rowsHtml}</div>
+                </div>
+            `;
+        }
+        
+        function renderDetailSectionWide(title, list) {
+            if (!list || list.length === 0) {
+                return `
+                    <div class="detail-card">
+                        <h4 class="detail-card-title">${title}</h4>
+                        <div class="empty-state">N/A</div>
+                    </div>
+                `;
+            }
+            
+            const active = list.filter(item => item.old_percentage > 0 || item.new_percentage > 0);
+            if (active.length === 0) {
+                return `
+                    <div class="detail-card">
+                        <h4 class="detail-card-title">${title}</h4>
+                        <div class="empty-state">Không có sự thay đổi</div>
+                    </div>
+                `;
+            }
+            
+            const rowsHtml = active.slice(0, 12).map(item => {
+                const diff = item.diff;
+                const diffClass = diff > 0 ? 'up' : (diff < 0 ? 'down' : 'neutral');
+                const diffStr = diff > 0 ? `+${diff.toFixed(1)}%` : (diff < 0 ? `${diff.toFixed(1)}%` : '0.0%');
+                const diffText = diff !== 0 ? `<span class="metric-diff ${diffClass}">${diffStr}</span>` : '<span class="metric-diff neutral">▬</span>';
+                
+                return `
+                    <div class="metric-row">
+                        <div class="metric-info">
+                            <span class="metric-name">${item.name}</span>
+                            <span class="metric-values">${item.old_percentage.toFixed(1)}% → ${item.new_percentage.toFixed(1)}% ${diffText}</span>
+                        </div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar-fill" style="width: ${item.new_percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            return `
+                <div class="detail-card">
+                    <h4 class="detail-card-title">${title}</h4>
+                    <div class="moves-grid-details">${rowsHtml}</div>
+                </div>
+            `;
+        }
+        
+        function toggleRow(rowId, p) {
+            const rowEl = document.getElementById(rowId);
+            const triggerEl = document.getElementById('trigger-' + rowId);
+            
+            if (rowEl.style.display === 'none') {
+                rowEl.style.display = 'table-row';
+                triggerEl.classList.add('active');
+                
+                const gridEl = document.getElementById('grid-' + rowId);
+                const itemsHtml = renderDetailSection("Vật phẩm phổ biến (Items)", p.items);
+                const abilitiesHtml = renderDetailSection("Đặc tính phổ biến (Abilities)", p.abilities);
+                const terasHtml = renderDetailSection("Hệ Tera phổ biến (Tera Types)", p.teras);
+                const naturesHtml = renderDetailSection("Tính cách (Natures)", p.natures);
+                const movesHtml = renderDetailSectionWide("Chiêu thức phổ biến (Moves)", p.moves);
+                
+                gridEl.innerHTML = `
+                    ${itemsHtml}
+                    ${abilitiesHtml}
+                    ${terasHtml}
+                    ${naturesHtml}
+                    <div style="grid-column: 1 / -1;">
+                        ${movesHtml}
+                    </div>
+                `;
+            } else {
+                rowEl.style.display = 'none';
+                triggerEl.classList.remove('active');
+            }
+        }
+        
+        function switchTab(tab, btn) {
+            activeTab = tab;
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            renderTable();
+        }
+        
+        document.getElementById('search-input').oninput = (e) => {
+            searchQuery = e.target.value;
+            renderTable();
+        };
+        
+        renderTable();
+    </script>
+</body>
+</html>
+"""
+    html_content = html_template.replace("{{JSON_DATA}}", json_str)
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+
 def main():
     args = parse_args()
     
@@ -326,10 +1267,15 @@ def main():
     with open(json_filename, "w", encoding="utf-8") as f:
         json.dump(comparison_results, f, ensure_ascii=False, indent=2)
         
+    # Ghi ra file HTML
+    html_filename = os.path.join(output_dir, f"{safe_old_name}_vs_{safe_new_name}_comparison.html")
+    write_html_comparison(comparison_results, html_filename)
+        
     print(f"\n==================================================")
     print(f" THÀNH CÔNG: Đã tạo và lưu báo cáo so sánh tại:")
     print(f" -> Markdown: {os.path.abspath(md_filename)}")
     print(f" -> JSON: {os.path.abspath(json_filename)}")
+    print(f" -> HTML: {os.path.abspath(html_filename)}")
     print(f"==================================================")
     
     # Hiển thị tóm tắt ra console
