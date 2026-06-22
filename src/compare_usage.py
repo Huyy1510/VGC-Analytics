@@ -605,6 +605,25 @@ def write_html_comparison(data, filename):
                 width: auto;
             }
         }
+
+        /* Pokémon & Item Sprites styling */
+        .pokemon-sprite-mini {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            transition: transform 0.2s ease;
+        }
+        .poke-row:hover .pokemon-sprite-mini {
+            transform: scale(1.15);
+        }
+        .item-sprite-mini {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
@@ -685,6 +704,43 @@ def write_html_comparison(data, filename):
     <script>
         const data = {{JSON_DATA}};
         const pokes = data.pokemon_shifts;
+        
+        function getPokemonSpriteUrl(pokemonName, formName = "") {
+            let slug = pokemonName.trim().toLowerCase()
+                .replace(/\\s+/g, '-')
+                .replace(/[^a-z0-9\\-]/g, '');
+                
+            // Sửa lỗi tên một số Pokemon để khớp với file ảnh lưu trên Cloud Storage
+            if (slug.startsWith("mimikyu")) {
+                slug = "mimikyu";
+            } else if (slug.startsWith("aegislash")) {
+                slug = "aegislash";
+            } else if (slug.includes("kommo-o")) {
+                slug = slug.replace("kommo-o", "kommoo");
+            }
+                
+            if (formName) {
+                let fClean = formName.trim().toLowerCase();
+                if (fClean !== "base") {
+                    if (fClean === "mega x" || fClean === "mega-x") {
+                        slug += "-megax";
+                    } else if (fClean === "mega y" || fClean === "mega-y") {
+                        slug += "-megay";
+                    } else {
+                        slug += "-" + fClean.replace(/[^a-z0-9]/g, '');
+                    }
+                }
+            }
+            return `https://storage.longngphuc.id.vn/public/sprites/pokemon/${slug}.png`;
+        }
+        
+        function getItemSpriteUrl(itemName) {
+            if (!itemName) return "";
+            let slug = itemName.trim().toLowerCase()
+                .replace(/\\s+/g, '-')
+                .replace(/[^a-z0-9\\-]/g, '');
+            return `https://storage.longngphuc.id.vn/public/sprites/items/${slug}.png`;
+        }
         let activeTab = 'all';
         let searchQuery = '';
         
@@ -843,7 +899,12 @@ def write_html_comparison(data, filename):
                 tr.innerHTML = `
                     <td class="rank-cell">${newRankText}</td>
                     <td class="rank-change ${rcClass}">${rcText}</td>
-                    <td class="name-cell">${p.name}</td>
+                    <td class="name-cell">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <img src="${getPokemonSpriteUrl(p.name)}" class="pokemon-sprite-mini" alt="${p.name}">
+                            <span>${p.name}</span>
+                        </div>
+                    </td>
                     <td class="pct-cell">${oldPctText}</td>
                     <td class="pct-cell">${newPctText}</td>
                     <td class="diff-cell ${diffClass}">${diffText}</td>
@@ -866,7 +927,7 @@ def write_html_comparison(data, filename):
             });
         }
         
-        function renderDetailSection(title, list) {
+        function renderDetailSection(title, list, type = "generic", extra = "") {
             if (!list || list.length === 0) {
                 return `
                     <div class="detail-card">
@@ -892,10 +953,20 @@ def write_html_comparison(data, filename):
                 const diffStr = diff > 0 ? `+${diff.toFixed(1)}%` : (diff < 0 ? `${diff.toFixed(1)}%` : '0.0%');
                 const diffText = diff !== 0 ? `<span class="metric-diff ${diffClass}">${diffStr}</span>` : '<span class="metric-diff neutral">▬</span>';
                 
+                let spriteHtml = "";
+                if (type === "item") {
+                    spriteHtml = `<img src="${getItemSpriteUrl(item.name)}" class="item-sprite-mini" style="margin-right: 0.5rem;" alt="${item.name}" onerror="this.style.display='none'">`;
+                } else if (type === "form") {
+                    spriteHtml = `<img src="${getPokemonSpriteUrl(extra, item.name)}" class="pokemon-sprite-mini" style="margin-right: 0.5rem;" alt="${item.name}">`;
+                }
+                
                 return `
                     <div class="metric-row">
-                        <div class="metric-info">
-                            <span class="metric-name">${item.name}</span>
+                        <div class="metric-info" style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center;">
+                                ${spriteHtml}
+                                <span class="metric-name">${item.name}</span>
+                            </div>
                             <span class="metric-values">${item.old_percentage.toFixed(1)}% → ${item.new_percentage.toFixed(1)}% ${diffText}</span>
                         </div>
                         <div class="metric-bar-container">
@@ -973,13 +1044,13 @@ def write_html_comparison(data, filename):
                 if (p.forms && p.forms.length > 0) {
                     const hasVariants = p.forms.some(f => f.name !== "Base" && (f.old_percentage > 0 || f.new_percentage > 0));
                     if (hasVariants) {
-                        formsHtml = renderDetailSection("Forms & Mega Variants Shifts", p.forms);
+                        formsHtml = renderDetailSection("Forms & Mega Variants Shifts", p.forms, "form", p.name);
                     }
                 }
                 
-                const itemsHtml = renderDetailSection("Popular Items", p.items);
-                const abilitiesHtml = renderDetailSection("Popular Abilities", p.abilities);
-                const naturesHtml = renderDetailSection("Popular Natures", p.natures);
+                const itemsHtml = renderDetailSection("Popular Items", p.items, "item");
+                const abilitiesHtml = renderDetailSection("Popular Abilities", p.abilities, "generic");
+                const naturesHtml = renderDetailSection("Popular Natures", p.natures, "generic");
                 const movesHtml = renderDetailSectionWide("Popular Moves", p.moves);
                 
                 gridEl.innerHTML = `

@@ -541,6 +541,36 @@ def write_html_report(data, filename):
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 1rem;
         }}
+        
+        /* Pokémon & Item Sprites styling */
+        .pokemon-sprite-mini {{
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            transition: transform 0.2s ease;
+        }}
+        .pokemon-item:hover .pokemon-sprite-mini {{
+            transform: scale(1.15);
+        }}
+        .pokemon-sprite-large {{
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+        }}
+        .item-sprite-mini {{
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }}
     </style>
 </head>
 <body>
@@ -573,6 +603,43 @@ def write_html_report(data, filename):
         const pokes = data.pokemon_usage;
         let activeIndex = 0;
         
+        function getPokemonSpriteUrl(pokemonName, formName = "") {{
+            let slug = pokemonName.trim().toLowerCase()
+                .replace(/\\s+/g, '-')
+                .replace(/[^a-z0-9\\-]/g, '');
+                
+            // Sửa lỗi tên một số Pokemon để khớp với file ảnh lưu trên Cloud Storage
+            if (slug.startsWith("mimikyu")) {{
+                slug = "mimikyu";
+            }} else if (slug.startsWith("aegislash")) {{
+                slug = "aegislash";
+            }} else if (slug.includes("kommo-o")) {{
+                slug = slug.replace("kommo-o", "kommoo");
+            }}
+                
+            if (formName) {{
+                let fClean = formName.trim().toLowerCase();
+                if (fClean !== "base") {{
+                    if (fClean === "mega x" || fClean === "mega-x") {{
+                        slug += "-megax";
+                    }} else if (fClean === "mega y" || fClean === "mega-y") {{
+                        slug += "-megay";
+                    }} else {{
+                        slug += "-" + fClean.replace(/[^a-z0-9]/g, '');
+                    }}
+                }}
+            }}
+            return `https://storage.longngphuc.id.vn/public/sprites/pokemon/${{slug}}.png`;
+        }}
+        
+        function getItemSpriteUrl(itemName) {{
+            if (!itemName) return "";
+            let slug = itemName.trim().toLowerCase()
+                .replace(/\\s+/g, '-')
+                .replace(/[^a-z0-9\\-]/g, '');
+            return `https://storage.longngphuc.id.vn/public/sprites/items/${{slug}}.png`;
+        }}
+        
         const listEl = document.getElementById("list");
         const detailsEl = document.getElementById("details");
         const searchInput = document.getElementById("search");
@@ -596,7 +663,8 @@ def write_html_report(data, filename):
                 li.className = "pokemon-item" + (originalIdx === activeIndex ? " active" : "");
                 li.innerHTML = `
                     <span class="pokemon-rank">#${{p.rank}}</span>
-                    <span class="pokemon-name">${{p.name}}</span>
+                    <img src="${{getPokemonSpriteUrl(p.name)}}" class="pokemon-sprite-mini" alt="${{p.name}}">
+                    <span class="pokemon-name" style="margin-left: 0.5rem;">${{p.name}}</span>
                     <span class="pokemon-pct">${{p.percentage.toFixed(1)}}%</span>
                 `;
                 li.onclick = () => {{
@@ -619,6 +687,44 @@ def write_html_report(data, filename):
                         </div>
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${{item.percentage}}%"></div>
+                        </div>
+                    </div>
+                `).join('') + '</div>';
+        }}
+        
+        function renderItemsList(items) {{
+            if (!items || items.length === 0) return '<div class="empty-state">N/A</div>';
+            return '<div class="card-list">' + 
+                items.slice(0, 5).map(item => `
+                    <div class="card-item">
+                        <div class="item-info" style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="${{getItemSpriteUrl(item.name)}}" class="item-sprite-mini" alt="${{item.name}}" onerror="this.style.display='none'">
+                                <span class="item-name">${{item.name}}</span>
+                            </div>
+                            <span class="item-pct">${{item.percentage.toFixed(1)}}% (${{item.count}} times)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${{item.percentage}}%"></div>
+                        </div>
+                    </div>
+                `).join('') + '</div>';
+        }}
+        
+        function renderFormsList(forms, baseName) {{
+            if (!forms || forms.length === 0) return '<div class="empty-state">N/A</div>';
+            return '<div class="card-list">' + 
+                forms.map(form => `
+                    <div class="card-item">
+                        <div class="item-info" style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="${{getPokemonSpriteUrl(baseName, form.name)}}" class="pokemon-sprite-mini" alt="${{form.name}}">
+                                <span class="item-name">${{form.name}}</span>
+                            </div>
+                            <span class="item-pct">${{form.percentage.toFixed(1)}}% (${{form.count}} times)</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${{form.percentage}}%"></div>
                         </div>
                     </div>
                 `).join('') + '</div>';
@@ -647,16 +753,19 @@ def write_html_report(data, filename):
                 formsHtml = `
                     <div class="card">
                         <h3 class="card-title">Forms & Mega Variants</h3>
-                        ${{renderProgressList(p.forms)}}
+                        ${{renderFormsList(p.forms, p.name)}}
                     </div>
                 `;
             }}
             
             detailsEl.innerHTML = `
-                <div class="details-header">
-                    <div>
-                        <h2 class="details-title">${{p.name}}</h2>
-                        <div class="details-subtitle">Rank #${{p.rank}} | Usage: ${{p.count}} times across teams</div>
+                <div class="details-header" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 1.5rem;">
+                        <img src="${{getPokemonSpriteUrl(p.name)}}" class="pokemon-sprite-large" alt="${{p.name}}">
+                        <div>
+                            <h2 class="details-title">${{p.name}}</h2>
+                            <div class="details-subtitle">Rank #${{p.rank}} | Usage: ${{p.count}} times across teams</div>
+                        </div>
                     </div>
                     <div style="text-align: right">
                         <div style="font-size: 2.2rem; font-weight: 700; color: var(--primary);">${{p.percentage.toFixed(1)}}%</div>
@@ -669,7 +778,7 @@ def write_html_report(data, filename):
                     
                     <div class="card">
                         <h3 class="card-title">Popular Items</h3>
-                        ${{renderProgressList(p.items)}}
+                        ${{renderItemsList(p.items)}}
                     </div>
                     
                     <div class="card">
