@@ -973,14 +973,12 @@ def write_html_comparison(data, filename):
                 const gridEl = document.getElementById('grid-' + rowId);
                 const itemsHtml = renderDetailSection("Popular Items", p.items);
                 const abilitiesHtml = renderDetailSection("Popular Abilities", p.abilities);
-                const terasHtml = renderDetailSection("Popular Tera Types", p.teras);
                 const naturesHtml = renderDetailSection("Popular Natures", p.natures);
                 const movesHtml = renderDetailSectionWide("Popular Moves", p.moves);
                 
                 gridEl.innerHTML = `
                     ${itemsHtml}
                     ${abilitiesHtml}
-                    ${terasHtml}
                     ${naturesHtml}
                     <div style="grid-column: 1 / -1;">
                         ${movesHtml}

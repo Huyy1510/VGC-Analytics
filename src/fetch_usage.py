@@ -667,11 +667,6 @@ def write_html_report(data, filename):
                     </div>
                     
                     <div class="card">
-                        <h3 class="card-title">Popular Tera Types</h3>
-                        ${{renderBadges(p.teras)}}
-                    </div>
-                    
-                    <div class="card">
                         <h3 class="card-title">Popular Natures</h3>
                         ${{renderBadges(p.natures)}}
                     </div>
