@@ -540,6 +540,12 @@
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
+        .report-badge.season {
+            background-color: rgba(167, 139, 250, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(167, 139, 250, 0.25);
+        }
+
         .report-details {
             display: flex;
             flex-direction: column;
@@ -622,6 +628,10 @@
                 <li class="menu-item" onclick="switchTab('top8')">
                     <span class="menu-icon">🏆</span>
                     <span>Top 8 Graphics</span>
+                </li>
+                <li class="menu-item" onclick="switchTab('season')">
+                    <span class="menu-icon">🗓️</span>
+                    <span>Season Analyzer</span>
                 </li>
                 <li class="menu-item" onclick="switchTab('history')">
                     <span class="menu-icon">📂</span>
@@ -718,6 +728,32 @@
             </div>
         </div>
         
+        <!-- Tab: Season Analyzer -->
+        <div id="tab-season" class="tab-content">
+            <div class="section-header">
+                <h2 class="section-title">Season Trend Analyzer</h2>
+                <p class="section-desc">Phân tích và theo dõi xu hướng thay đổi metagame qua chuỗi các giải đấu trong một mùa giải.</p>
+            </div>
+            
+            <div class="card">
+                <div class="form-group">
+                    <label class="form-label" for="season-name">Tên mùa giải</label>
+                    <input type="text" id="season-name" class="form-input" placeholder="Ví dụ: Summer Season 2026" value="VGC Season">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Chọn các giải đấu muốn đưa vào phân tích (Chọn tối thiểu 2 giải đấu):</label>
+                    <div id="season-tours-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; background-color: var(--bg-dark); display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="empty-state" style="color: var(--text-muted); font-style: italic;">Chưa có giải đấu nào được lưu. Hãy phân tích vài giải đấu trước!</div>
+                    </div>
+                </div>
+                
+                <button onclick="compareSeason()" class="btn" style="background: linear-gradient(135deg, var(--primary), #a78bfa);">
+                    <span>📊</span> Phân Tích & Vẽ Biểu Đồ Mùa Giải
+                </button>
+            </div>
+        </div>
+        
         <!-- Tab 4: History & Generated Reports -->
         <div id="tab-history" class="tab-content">
             <div class="section-header">
@@ -792,6 +828,8 @@
             // If switched to compare, make sure we populate dropdowns
             if (tabName === 'compare') {
                 populateCompareSelects();
+            } else if (tabName === 'season') {
+                populateSeasonToursList();
             }
         }
         
@@ -836,6 +874,8 @@
                     renderHistory();
                     if (document.getElementById("tab-compare").classList.contains("active")) {
                         populateCompareSelects();
+                    } else if (document.getElementById("tab-season") && document.getElementById("tab-season").classList.contains("active")) {
+                        populateSeasonToursList();
                     }
                 });
         }
@@ -1027,6 +1067,54 @@
             
             runCommand("/api/generate-top8", {
                 tournament: tournament
+            });
+        }
+        
+        function populateSeasonToursList() {
+            const container = document.getElementById("season-tours-list");
+            if (!container) return;
+            
+            if (!window.jsonReports || window.jsonReports.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="color: var(--text-muted); font-style: italic;">Chưa có giải đấu nào được lưu. Hãy phân tích vài giải đấu trước!</div>';
+                return;
+            }
+            
+            container.innerHTML = "";
+            window.jsonReports.forEach(r => {
+                const item = document.createElement("label");
+                item.style.display = "flex";
+                item.style.alignItems = "center";
+                item.style.gap = "0.75rem";
+                item.style.cursor = "pointer";
+                item.style.padding = "0.25rem 0.5rem";
+                item.style.borderRadius = "6px";
+                item.style.transition = "background-color 0.2s ease";
+                
+                item.onmouseover = () => item.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+                item.onmouseout = () => item.style.backgroundColor = "transparent";
+                
+                item.innerHTML = `
+                    <input type="checkbox" name="season-tour-checkbox" value="${r.filename}" style="width: 1.1rem; height: 1.1rem; accent-color: var(--primary); margin: 0;">
+                    <span style="font-weight: 500; font-size: 0.95rem; color: var(--text-main);">${r.name}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function compareSeason() {
+            const name = document.getElementById("season-name").value.trim() || "VGC Season";
+            const checkboxes = document.querySelectorAll('input[name="season-tour-checkbox"]:checked');
+            
+            if (checkboxes.length < 2) {
+                alert("Vui lòng chọn tối thiểu 2 giải đấu để so sánh xu hướng cả mùa giải!");
+                return;
+            }
+            
+            const selectedFiles = Array.from(checkboxes).map(cb => cb.value);
+            
+            runCommand("/api/compare-season", {
+                name: name,
+                files: selectedFiles.join(",")
             });
         }
     </script>

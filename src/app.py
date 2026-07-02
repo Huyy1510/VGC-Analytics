@@ -12,7 +12,7 @@ import time
 import ssl
 import re
 
-APP_VERSION = "v2.0.0-beta"
+APP_VERSION = "v2.0.1-beta"
 # Get the directory where app.py is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Project root is the parent of SCRIPT_DIR
@@ -22,6 +22,7 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 os.makedirs(os.path.join(PROJECT_ROOT, "results", "usage"), exist_ok=True)
 os.makedirs(os.path.join(PROJECT_ROOT, "results", "compare"), exist_ok=True)
 os.makedirs(os.path.join(PROJECT_ROOT, "results", "top8"), exist_ok=True)
+os.makedirs(os.path.join(PROJECT_ROOT, "results", "season"), exist_ok=True)
 
 # Create templates dir if it doesn't exist
 os.makedirs(os.path.join(SCRIPT_DIR, "templates"), exist_ok=True)
@@ -67,6 +68,8 @@ class LocalAppHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_compare_usage(query)
         elif path == "/api/generate-top8":
             self.handle_generate_top8(query)
+        elif path == "/api/compare-season":
+            self.handle_compare_season(query)
         elif path.startswith("/results/"):
             # Serve files from results directory
             rel_path = path[len("/results/"):]
@@ -201,6 +204,20 @@ class LocalAppHandler(http.server.SimpleHTTPRequestHandler):
                         "mtime": os.path.getmtime(fp)
                     })
                     
+        # 4. Season HTML reports
+        season_dir = os.path.join(PROJECT_ROOT, "results", "season")
+        if os.path.exists(season_dir):
+            for f in os.listdir(season_dir):
+                if f.endswith(".html"):
+                    fp = os.path.join(season_dir, f)
+                    reports.append({
+                        "type": "season",
+                        "name": f.replace("_season.html", "").replace("__", " ").replace("_", " "),
+                        "filename": f,
+                        "url": f"/results/season/{f}",
+                        "mtime": os.path.getmtime(fp)
+                    })
+                    
         # 4. JSON files for comparison select
         json_files = []
         if os.path.exists(usage_dir):
@@ -285,6 +302,42 @@ class LocalAppHandler(http.server.SimpleHTTPRequestHandler):
         
         cmd = [sys.executable, os.path.join(SCRIPT_DIR, "generate_top8.py"), tournament]
         self.run_and_stream_cmd(cmd, "top8")
+        
+    def handle_compare_season(self, query):
+        files_param = query.get("files", [])
+        if len(files_param) == 1 and "," in files_param[0]:
+            files_list = [f.strip() for f in files_param[0].split(",") if f.strip()]
+        else:
+            files_list = [f.strip() for f in files_param if f.strip()]
+            
+        season_name = query.get("name", ["VGC Season"])[0]
+        
+        if not files_list:
+            self.send_error_json("No report files selected for season analysis")
+            return
+            
+        absolute_paths = []
+        for filename in files_list:
+            path = os.path.join(PROJECT_ROOT, "results", "usage", filename)
+            if os.path.exists(path):
+                absolute_paths.append(path)
+                
+        if not absolute_paths:
+            self.send_error_json("None of the selected report files exist")
+            return
+            
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/event-stream')
+        self.send_header('Cache-Control', 'no-cache')
+        self.send_header('Connection', 'keep-alive')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
+        cmd = [sys.executable, os.path.join(SCRIPT_DIR, "compare_season.py")]
+        cmd.extend(absolute_paths)
+        cmd.extend(["--name", season_name])
+        
+        self.run_and_stream_cmd(cmd, "season")
         
     def run_and_stream_cmd(self, cmd, cmd_type):
         try:

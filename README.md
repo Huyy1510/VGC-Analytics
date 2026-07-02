@@ -15,7 +15,8 @@ Một công cụ bằng Python tự động hóa 100% quy trình xử lý sau gi
 - `src/`: Thư mục chứa các tệp mã nguồn Python chính.
   - `generate_top8.py`: Script tự động tạo ảnh bảng xếp hạng và PokePaste cho Top 8 người chơi.
   - `fetch_usage.py`: Script tự động thu thập và phân tích chỉ số sử dụng (Usage Statistics) của tất cả người chơi.
-  - `compare_usage.py`: Script tự động so sánh biến động metagame và cách xây dựng giữa các tuần.
+  - `compare_usage.py`: Script tự động so sánh biến động metagame và cách xây dựng giữa các tuần giải đấu.
+  - `compare_season.py`: Script tự động phân tích và trực quan hóa xu hướng metagame cả mùa giải qua chuỗi các giải đấu.
 - `data/`: Thư mục chứa từ điển ánh xạ chuẩn hóa tên.
   - `pokemon_name_mapping.json`: Từ điển ánh xạ tên Pokemon.
   - `item_name_mapping.json`: Từ điển ánh xạ tên vật phẩm.
@@ -105,6 +106,26 @@ python3 src/compare_usage.py "Alpensee_Tour_60_usage.json" "Alpensee_Tour_62_usa
 
 ---
 
+### 3. Phân tích xu hướng cả mùa giải (src/compare_season.py)
+
+Mở Terminal hoặc Command Prompt tại thư mục dự án và chạy:
+
+```bash
+python3 src/compare_season.py <Đường dẫn các tệp JSON giải đấu...> --name "<Tên Mùa Giải>"
+```
+
+#### Ví dụ:
+```bash
+python3 src/compare_season.py "results/usage/tour1_usage.json" "results/usage/tour2_usage.json" --name "VGC 2026 Summer Season"
+```
+
+#### Kết quả đầu ra:
+- **Bản đồ tương tác Heatmap & Biểu đồ xu hướng (HTML)**: Lưu tại `results/season/[tên_mùa_giải]_season.html` với đầy đủ các tab timeline biến động sử dụng (vạch phân cách format shift), ma trận heatmap sử dụng và bảng phân tích winners/losers.
+- **Biểu đồ Item cho từng Pokémon**: Bảng Heatmap hỗ trợ click vào dòng bất kỳ để mở rộng xem biểu đồ hình cột chi tiết về các vật phẩm được sử dụng nhiều nhất cho Pokémon đó trong suốt mùa giải.
+- **Dữ liệu Season JSON**: Lưu dữ liệu cấu trúc đầy đủ tại `results/season/[tên_mùa_giải]_season.json`.
+
+---
+
 ### 4. Giao diện điều khiển đồ họa (Local Desktop App - src/app.py)
 
 Đây là giao diện điều khiển đồ họa chạy local trên trình duyệt của bạn (Zero-Dependency), giúp bạn thực hiện tất cả các thao tác trên một cách dễ dàng, trực quan mà không cần gõ lệnh Terminal:
@@ -121,6 +142,14 @@ python3 src/app.py
 Ứng dụng sẽ tự động khởi chạy một web server mini local tại địa chỉ `http://127.0.0.1:5000` và tự động mở tab trình duyệt mặc định của bạn.
 
 ## Nhật ký cập nhật (Changelog)
+
+### v2.0.1-beta (02/07/2026)
+- **Tính năng Phân tích xu hướng cả mùa giải (`src/compare_season.py`)**:
+  - So sánh metagame qua chuỗi các giải đấu trong mùa giải.
+  - Vẽ biểu đồ timeline bằng Chart.js cho Top 10 Pokémon, hỗ trợ vẽ vạch phân cách chuyển đổi thể thức (format shift).
+  - Xuất bảng Heatmap Matrix tỉ lệ sử dụng qua các giải đấu với màu sắc phân cấp.
+  - Tích hợp biểu đồ cột ngang cho Top 5 Vật phẩm (Items) sử dụng của từng Pokémon dạng expandable row.
+  - Thêm tab **Season Analyzer** trên thanh Menu của ứng dụng Local App, hỗ trợ chọn giải đấu bằng checkbox.
 
 ### v2.0.0-beta (26/06/2026)
 - **Giao diện điều khiển đồ họa Local Desktop (`src/app.py` & `src/templates/index.html`)**:
